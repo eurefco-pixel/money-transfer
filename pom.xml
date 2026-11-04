@@ -20,9 +20,9 @@
 
     <properties>
         <java.version>21</java.version>
-        <!-- Версии Testcontainers задаём явно: 2.x появилась в 2025-2026,
-             в BOM Boot 4 они управляются, но явная версия надёжнее для читателя -->
         <testcontainers.version>2.0.5</testcontainers.version>
+        <!-- Пустой argLine: без него @{argLine} не развернётся -->
+        <argLine></argLine>
     </properties>
 
     <dependencies>
@@ -71,6 +71,29 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Выдаёт свойства вида ${org.mockito:mockito-core:jar} — путь к jar в .m2 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Подключает mockito-core как агент при старте JVM тестов -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
+                </configuration>
             </plugin>
         </plugins>
     </build>
