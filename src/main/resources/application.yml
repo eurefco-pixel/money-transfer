@@ -1,0 +1,33 @@
+server:
+  # Адрес под интеграцию с FRONT (см. расхождение 8080/5500 — правится здесь)
+  port: 8080
+
+spring:
+  application:
+    name: money-transfer-service
+
+transfer:
+  commission-rate: 0.01      # 1% от суммы
+  operation-ttl-minutes: 5
+  allowed-currencies: [ RUR ]
+  max-amount-value: 100000000  # копейки
+
+cards:
+  file: ./data/cards.json
+  persist-on-change: true
+
+transfer-log:
+  file: ./data/transfer.log
+
+logging:
+  level:
+    ru.example.moneytransfer: DEBUG
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+cards:
+  file: /app/data/cards.json
+transfer-log:
+  file: /app/data/transfer.log
