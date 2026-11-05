@@ -20,6 +20,22 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(e.getMessage(), e.getMessage().hashCode()));
     }
 
+    @ExceptionHandler(OperationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleOperationNotFound(OperationNotFoundException e) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)  // 400 — соответствует "Error input data"
+                .body(new ErrorResponse(e.getMessage(), e.getMessage().hashCode()));
+    }
+
+
+    // Неверный код подтверждения — 400. Клиент прислал не то.
+    @ExceptionHandler(InvalidConfirmationCodeException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidConfirmationCode(InvalidConfirmationCodeException e) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(e.getMessage(), e.getMessage().hashCode()));
+    }
+
     @ExceptionHandler(ErrorTransfer.class)
     public ResponseEntity<ErrorResponse> handleTransfer(ErrorTransfer e) {
         return ResponseEntity

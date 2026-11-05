@@ -1,7 +1,7 @@
 package ru.example.moneytransfer.service;
 
 import org.springframework.stereotype.Service;
-import ru.example.moneytransfer.exception.ErrorTransfer;
+import ru.example.moneytransfer.exception.ErrorInputData;
 import ru.example.moneytransfer.exception.InsufficientFundsException;
 import ru.example.moneytransfer.exception.InvalidConfirmationCodeException;
 import ru.example.moneytransfer.exception.OperationNotFoundException;
@@ -70,7 +70,7 @@ public class TransferServiceImpl implements TransferService {
     @Override
     public String confirmOperation(ConfirmationRequest request) {
         if (request == null || request.operationId() == null || request.code() == null) {
-            throw new ErrorTransfer("Не заполнены данные подтверждения");
+            throw new ErrorInputData("Не заполнены данные подтверждения");
         }
 
         Operation operation = operations.get(request.operationId());
@@ -78,7 +78,7 @@ public class TransferServiceImpl implements TransferService {
             throw new OperationNotFoundException("Операция не найдена: " + request.operationId());
         }
         if (operation.confirmed()) {
-            throw new ErrorTransfer("Операция уже подтверждена");
+            throw new ErrorInputData("Операция уже подтверждена");
         }
         if (!"0000".equals(request.code())) {
             logger.logError(operation, "FAILED", "Неверный код подтверждения");
