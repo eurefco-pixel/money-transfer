@@ -1,6 +1,8 @@
 package ru.example.moneytransfer.exception;
 
 import ru.example.moneytransfer.model.ErrorResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -12,6 +14,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);  // ← добавлено
 
     @ExceptionHandler(ErrorInputData.class)
     public ResponseEntity<ErrorResponse> handleInput(ErrorInputData e) {
@@ -35,6 +39,14 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(e.getMessage(), e.getMessage().hashCode()));
     }
 
+    // Нехватка средств — 500 по протоколу (Error transfer)
+    @ExceptionHandler(InsufficientFundsException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientFunds(InsufficientFundsException e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(e.getMessage(), e.getMessage().hashCode()));
+    }
+
     @ExceptionHandler(ErrorTransfer.class)
     public ResponseEntity<ErrorResponse> handleTransfer(ErrorTransfer e) {
         return ResponseEntity
@@ -42,9 +54,10 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(e.getMessage(), e.getMessage().hashCode()));
     }
 
-    // Непредвиденное — тоже 500, чтобы формат ответа не ломался
+    // Непредвиденное — 500 и стектрейс в лог приложения
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleOther(Exception e) {
+        log.error("Непредвиденная ошибка", e);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse("Internal error", 500));

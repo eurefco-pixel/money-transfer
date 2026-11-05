@@ -50,6 +50,7 @@ public class TransferServiceImpl implements TransferService {
         cardStorage.getBalance(to);
 
         if (fromBalance < amountKopecks + commission) {
+            logger.logFailed(null, from, to, amountKopecks, "Недостаточно средств на карте отправителя");
             throw new InsufficientFundsException("Недостаточно средств на карте отправителя");
         }
 
@@ -75,9 +76,11 @@ public class TransferServiceImpl implements TransferService {
 
         Operation operation = operations.get(request.operationId());
         if (operation == null) {
+            logger.logFailed(request.operationId(), "", "", 0, "Операция не найдена");
             throw new OperationNotFoundException("Операция не найдена: " + request.operationId());
         }
         if (operation.confirmed()) {
+            logger.logError(operation, "Операция уже подтверждена");
             throw new ErrorInputData("Операция уже подтверждена");
         }
         if (!"0000".equals(request.code())) {
@@ -103,10 +106,7 @@ public class TransferServiceImpl implements TransferService {
     }
 
     private long toKopecks(Amount amount) {
-        return BigDecimal.valueOf(amount.value())
-                .multiply(BigDecimal.valueOf(100))
-                .setScale(0, RoundingMode.HALF_UP)
-                .longValueExact();
+        return amount.value();
     }
 
     private long commissionKopecks(long amountKopecks) {

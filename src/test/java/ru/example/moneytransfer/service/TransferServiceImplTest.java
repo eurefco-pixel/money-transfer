@@ -35,7 +35,7 @@ class TransferServiceImplTest {
         transferRequest = new TransferRequest(
                 "4111111111111111", "12/27", "123",
                 "5555555555554444",
-                new Amount(1000, "RUR")
+                new Amount(100_000, "RUR")
         );
 
         // Балансы по умолчанию: обе карты есть, средств хватает
@@ -58,7 +58,7 @@ class TransferServiceImplTest {
         String result = service.confirmOperation(new ConfirmationRequest(opId, "0000"));
 
         assertEquals(opId, result);
-        // списание: 1000 руб = 100000 коп + комиссия 10000 коп (1%)
+        // списание: 1000 руб = 100000 коп + комиссия 1000 коп (1%)
         verify(cardStorage).debit("4111111111111111", 101_000L);
         verify(cardStorage).credit("5555555555554444", 100_000L);
         verify(logger).logSuccess(any());

@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
 
 /**
  * Запись лога переводов в файл построчно в формате JSON.
@@ -54,16 +55,48 @@ public class TransferLogger {
     }
 
     private String toJson(Operation operation, String result, String reason) {
+        return toJson(
+                operation.operationId(),
+                operation.cardFromNumber(),
+                operation.cardToNumber(),
+                operation.amountValue(),
+                operation.commission(),   // ← теперь комиссия доехала
+                result,
+                reason
+        );
+    }
+
+    private String toJson(String operationId, String cardFrom, String cardTo,
+                          long amountKopecks, long commissionKopecks,
+                          String result, String reason) {
         return "{"
-                + "\"timestamp\":\"" + operation.createdAt() + "\","
-                + "\"operationId\":\"" + operation.operationId() + "\","
-                + "\"cardFrom\":\"" + operation.cardFromNumber() + "\","
-                + "\"cardTo\":\"" + operation.cardToNumber() + "\","
-                + "\"amount\":" + operation.amountValue() + ","
-                + "\"commission\":" + operation.commission() + ","
+                + "\"timestamp\":\"" + LocalDateTime.now() + "\","
+                + "\"operationId\":\"" + escape(operationId) + "\","
+                + "\"cardFrom\":\"" + escape(cardFrom) + "\","
+                + "\"cardTo\":\"" + escape(cardTo) + "\","
+                + "\"amount\":" + amountKopecks + ","
+                + "\"commission\":" + commissionKopecks + ","
                 + "\"result\":\"" + result + "\""
                 + (reason != null ? ",\"reason\":\"" + escape(reason) + "\"" : "")
                 + "}";
+    }
+
+    /**
+     * Записывает ошибочную операцию для стадии создания перевода,
+     * когда объект Operation ещё не создан (result=FAILED).
+     * Неизвестные поля записываются пустыми строками, чтобы формат файла оставался стабильным.
+     */
+    public void logFailed(String operationId, String cardFrom, String cardTo,
+                          long amountKopecks, String reason) {
+        write(toJson(
+                operationId != null ? operationId : "",
+                cardFrom != null ? cardFrom : "",
+                cardTo != null ? cardTo : "",
+                amountKopecks,
+                0,          // комиссия на ошибочной операции не начислялась
+                RESULT_FAILED,
+                reason
+        ));
     }
 
     /**

@@ -1,0 +1,6 @@
+target/
+.idea/
+.gigaidea/
+*.iml
+data/
+.git/

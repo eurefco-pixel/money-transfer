@@ -16,3 +16,6 @@ data/transfer.log*
 # OS
 .DS_Store
 Thumbs.db
+.gigaide/
+*.log
+data/
