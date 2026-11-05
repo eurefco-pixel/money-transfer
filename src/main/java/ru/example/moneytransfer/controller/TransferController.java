@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import ru.example.moneytransfer.model.ConfirmationRequest;
 import ru.example.moneytransfer.model.TransferRequest;
+import ru.example.moneytransfer.model.TransferResponse;
 import ru.example.moneytransfer.service.TransferService;
 
 @RestController
@@ -17,12 +18,14 @@ public class TransferController {
     }
 
     @PostMapping("/transfer")
-    public String transfer(@RequestBody TransferRequest request) {
-        return transferService.transfer(request);
+    public TransferResponse transfer(@RequestBody TransferRequest request) {
+        String operationId = transferService.transfer(request);
+        return new TransferResponse(operationId);
     }
 
     @PostMapping("/confirmOperation")
-    public String confirmOperation(@RequestBody ConfirmationRequest request) {
-        return transferService.confirmOperation(request);
+    public TransferResponse confirmOperation(@RequestBody ConfirmationRequest request) {
+        String operationId = transferService.confirmOperation(request);
+        return new TransferResponse(operationId);
     }
 }
