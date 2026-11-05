@@ -1,0 +1,18 @@
+services:
+  api:
+    build: .
+    container_name: money-transfer-api
+    ports:
+      - "8080:8080"
+      - "5500:8080"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  front:
+    build: ./front
+    container_name: money-transfer-front
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
