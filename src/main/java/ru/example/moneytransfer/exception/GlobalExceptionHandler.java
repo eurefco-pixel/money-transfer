@@ -27,7 +27,6 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(e.getMessage(), e.getMessage().hashCode()));
     }
 
-
     // Неверный код подтверждения — 400. Клиент прислал не то.
     @ExceptionHandler(InvalidConfirmationCodeException.class)
     public ResponseEntity<ErrorResponse> handleInvalidConfirmationCode(InvalidConfirmationCodeException e) {

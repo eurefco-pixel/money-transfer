@@ -21,6 +21,9 @@ import java.nio.file.StandardOpenOption;
 @Component
 public class TransferLogger {
 
+    private static final String RESULT_SUCCESS = "SUCCESS";
+    private static final String RESULT_FAILED = "FAILED";
+
     private final Path logFile;
     private final Object lock = new Object();
 
@@ -36,14 +39,18 @@ public class TransferLogger {
         System.out.println("[TRANSFER-LOG] Файл лога: " + logFile.toAbsolutePath());
     }
 
-    /** Записывает успешную операцию. */
-    public void log(Operation operation, String result) {
-        write(toJson(operation, result, null));
+    /**
+     * Записывает успешную операцию (result=SUCCESS).
+     */
+    public void logSuccess(Operation operation) {
+        write(toJson(operation, RESULT_SUCCESS, null));
     }
 
-    /** Записывает ошибочную операцию с причиной. */
-    public void logError(Operation operation, String result, String reason) {
-        write(toJson(operation, result, reason));
+    /**
+     * Записывает ошибочную операцию с причиной (result=FAILED).
+     */
+    public void logError(Operation operation, String reason) {
+        write(toJson(operation, RESULT_FAILED, reason));
     }
 
     private String toJson(Operation operation, String result, String reason) {
@@ -59,7 +66,9 @@ public class TransferLogger {
                 + "}";
     }
 
-    /** Экранирует кавычки и слеши, чтобы JSON-строка осталась валидной. */
+    /**
+     * Экранирует кавычки и слеши, чтобы JSON-строка осталась валидной.
+     */
     private String escape(String value) {
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }

@@ -19,7 +19,9 @@ import java.time.YearMonth;
 @Component
 public class ValidationService {
 
-    /** Публичная точка входа: вызывает все проверки по порядку. */
+    /**
+     * Публичная точка входа: вызывает все проверки по порядку.
+     */
     public void validate(TransferRequest request) {
         if (request == null) {
             throw new ErrorInputData("Запрос не заполнен");

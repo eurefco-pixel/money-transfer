@@ -29,24 +29,24 @@ class TransferControllerWebMvcTest {
     @BeforeEach
     void setUp() {
         validTransferBody = """
-            {
-              "cardFromNumber": "4111111111111111",
-              "cardFromValidTill": "12/27",
-              "cardFromCVV": "123",
-              "cardToNumber": "5555555555554444",
-              "amount": {
-                "value": 1000,
-                "currency": "RUR"
-              }
-            }
-            """;
+                {
+                  "cardFromNumber": "4111111111111111",
+                  "cardFromValidTill": "12/27",
+                  "cardFromCVV": "123",
+                  "cardToNumber": "5555555555554444",
+                  "amount": {
+                    "value": 1000,
+                    "currency": "RUR"
+                  }
+                }
+                """;
 
         unknownOpIdBody = """
-            {
-              "operationId": "deadbeef-0000-0000-0000-000000000000",
-              "code": "0000"
-            }
-            """;
+                {
+                  "operationId": "deadbeef-0000-0000-0000-000000000000",
+                  "code": "0000"
+                }
+                """;
     }
 
     @Test

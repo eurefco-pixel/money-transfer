@@ -9,6 +9,8 @@ public record Operation(
         String createdAt,
         boolean confirmed
 ) {
-    // Никаких методов, возвращающих Operation.
-    // Геттер confirmed() уже есть автоматически (возвращает boolean) — этого достаточно.
+    /*
+     Никаких методов, возвращающих Operation.
+     Геттер confirmed() уже есть автоматически (возвращает boolean) — этого достаточно.
+    */
 }

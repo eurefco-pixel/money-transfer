@@ -61,7 +61,7 @@ class TransferServiceImplTest {
         // списание: 1000 руб = 100000 коп + комиссия 10000 коп (1%)
         verify(cardStorage).debit("4111111111111111", 101_000L);
         verify(cardStorage).credit("5555555555554444", 100_000L);
-        verify(logger).log(any(), eq("SUCCESS"));
+        verify(logger).logSuccess(any());
     }
 
     @Test
@@ -80,7 +80,7 @@ class TransferServiceImplTest {
         assertThrows(InvalidConfirmationCodeException.class,
                 () -> service.confirmOperation(new ConfirmationRequest(opId, "9999")));
 
-        verify(logger).logError(any(), eq("FAILED"), anyString());
+        verify(logger).logError(any(), eq("Неверный код подтверждения"));
         // и убедимся, что деньги не списались
         verify(cardStorage, never()).debit(anyString(), anyLong());
     }

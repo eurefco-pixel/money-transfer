@@ -46,10 +46,10 @@ public class TransferServiceImpl implements TransferService {
         long amountKopecks = toKopecks(request.amount());
         long commission = commissionKopecks(amountKopecks);
 
-        cardStorage.getBalance(from);
+        long fromBalance = cardStorage.getBalance(from);
         cardStorage.getBalance(to);
 
-        if (cardStorage.getBalance(from) < amountKopecks + commission) {
+        if (fromBalance < amountKopecks + commission) {
             throw new InsufficientFundsException("Недостаточно средств на карте отправителя");
         }
 
@@ -81,7 +81,7 @@ public class TransferServiceImpl implements TransferService {
             throw new ErrorInputData("Операция уже подтверждена");
         }
         if (!"0000".equals(request.code())) {
-            logger.logError(operation, "FAILED", "Неверный код подтверждения");
+            logger.logError(operation, "Неверный код подтверждения");
             throw new InvalidConfirmationCodeException("Неверный код подтверждения");
         }
 
@@ -89,7 +89,7 @@ public class TransferServiceImpl implements TransferService {
             cardStorage.debit(operation.cardFromNumber(), operation.amountValue() + operation.commission());
             cardStorage.credit(operation.cardToNumber(), operation.amountValue());
         } catch (RuntimeException e) {
-            logger.logError(operation, "FAILED", e.getMessage());
+            logger.logError(operation, e.getMessage());
             throw e;
         }
 
@@ -98,7 +98,7 @@ public class TransferServiceImpl implements TransferService {
                         operation.cardToNumber(), operation.amountValue(),
                         operation.commission(), operation.createdAt(), true));
 
-        logger.log(operation, "SUCCESS");
+        logger.logSuccess(operation);
         return request.operationId();
     }
 
