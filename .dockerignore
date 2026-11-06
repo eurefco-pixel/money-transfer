@@ -1,6 +1,20 @@
+# Сборка и зависимости
 target/
-.idea/
-.gigaidea/
-*.iml
-data/
+node_modules/
+
+# Git и IDE
 .git/
+.idea/
+.vscode/
+.gigaide/
+*.iml
+
+# Фронт собирается отдельным контекстом
+front/
+
+# Runtime-данные монтируются через compose
+data/
+
+# ОС
+.DS_Store
+Thumbs.db

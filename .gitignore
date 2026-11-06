@@ -9,14 +9,16 @@ target/
 .settings/
 .project
 .classpath
+.gigaide/
 
-# Logs and runtime data (в контейнере/локально генерируются)
-data/transfer.log*
+# Логи и runtime-данные (генерируются при работе)
+data/
+*.log
 
 # OS
 .DS_Store
 Thumbs.db
-.gigaide/
-*.log
-data/
-front/
+
+# Node (если FRONT — Node-проект)
+node_modules/
+dist/
