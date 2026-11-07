@@ -1,0 +1,2 @@
+transfer:
+  operation-ttl-minutes: 0   # операция просрочена сразу после создания

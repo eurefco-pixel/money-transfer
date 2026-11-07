@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import ru.example.moneytransfer.service.TransferService;
+import ru.example.moneytransfer.logger.TransferLogger;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -21,7 +22,10 @@ class TransferControllerWebMvcTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private TransferService transferService;   // ← заглушка вместо настоящего бина
+    private TransferService transferService;
+
+    @MockitoBean
+    private TransferLogger transferLogger;
 
     private String validTransferBody;
     private String unknownOpIdBody;

@@ -1,5 +1,7 @@
 package ru.example.moneytransfer.logger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.example.moneytransfer.model.Operation;
@@ -12,15 +14,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 
-/**
- * Запись лога переводов в файл построчно в формате JSON.
- * Каждая строка — одна операция: успешная (result=SUCCESS) или ошибочная
- * (result=FAILED с полем reason).
- * Формат записи соответствует плану этапа 1:
- * дата/время | operationId | cardFrom | cardTo | сумма | комиссия | результат (+ причина).
- */
 @Component
 public class TransferLogger {
+
+    private static final Logger log = LoggerFactory.getLogger(TransferLogger.class);
 
     private static final String RESULT_SUCCESS = "SUCCESS";
     private static final String RESULT_FAILED = "FAILED";
@@ -37,7 +34,7 @@ public class TransferLogger {
         } catch (IOException e) {
             throw new IllegalStateException("Не удалось создать папку для лога: " + logFile, e);
         }
-        System.out.println("[TRANSFER-LOG] Файл лога: " + logFile.toAbsolutePath());
+        log.info("Файл лога переводов: {}", logFile.toAbsolutePath());
     }
 
     /**
@@ -60,7 +57,7 @@ public class TransferLogger {
                 operation.cardFromNumber(),
                 operation.cardToNumber(),
                 operation.amountValue(),
-                operation.commission(),   // ← теперь комиссия доехала
+                operation.commission(),
                 result,
                 reason
         );
@@ -69,11 +66,12 @@ public class TransferLogger {
     private String toJson(String operationId, String cardFrom, String cardTo,
                           long amountKopecks, long commissionKopecks,
                           String result, String reason) {
+        // Маскирование в единственной точке: наружу уходят только последние 4 цифры
         return "{"
                 + "\"timestamp\":\"" + LocalDateTime.now() + "\","
                 + "\"operationId\":\"" + escape(operationId) + "\","
-                + "\"cardFrom\":\"" + escape(cardFrom) + "\","
-                + "\"cardTo\":\"" + escape(cardTo) + "\","
+                + "\"cardFrom\":\"" + escape(maskCard(cardFrom)) + "\","
+                + "\"cardTo\":\"" + escape(maskCard(cardTo)) + "\","
                 + "\"amount\":" + amountKopecks + ","
                 + "\"commission\":" + commissionKopecks + ","
                 + "\"result\":\"" + result + "\""
@@ -100,6 +98,17 @@ public class TransferLogger {
     }
 
     /**
+     * Маскирует номер карты: оставляет последние 4 цифры, остальное заменяет звёздами.
+     * Пустые и короткие значения превращаются в "****".
+     */
+    static String maskCard(String cardNumber) {
+        if (cardNumber == null || cardNumber.isBlank() || cardNumber.length() < 4) {
+            return "****";
+        }
+        return "**** " + cardNumber.substring(cardNumber.length() - 4);
+    }
+
+    /**
      * Экранирует кавычки и слеши, чтобы JSON-строка осталась валидной.
      */
     private String escape(String value) {
@@ -116,7 +125,7 @@ public class TransferLogger {
                 writer.write(System.lineSeparator());
             } catch (IOException e) {
                 // Сбой логирования не должен ломать бизнес-логику перевода
-                System.err.println("[TRANSFER-LOG] Ошибка записи в файл лога: " + e.getMessage());
+                log.error("Ошибка записи в файл лога {}: {}", logFile, e.getMessage());
             }
         }
     }

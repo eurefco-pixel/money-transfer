@@ -2,6 +2,7 @@ package ru.example.moneytransfer.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ru.example.moneytransfer.config.TransferProperties;
 import ru.example.moneytransfer.exception.ErrorInputData;
 import ru.example.moneytransfer.exception.InsufficientFundsException;
 import ru.example.moneytransfer.exception.InvalidConfirmationCodeException;
@@ -21,6 +22,7 @@ class TransferServiceImplTest {
     private ValidationService validationService;
     private CardStorageService cardStorage;
     private TransferLogger logger;
+    private TransferProperties properties;
     private TransferServiceImpl service;
 
     private TransferRequest transferRequest;
@@ -30,7 +32,12 @@ class TransferServiceImplTest {
         validationService = mock(ValidationService.class);
         cardStorage = mock(CardStorageService.class);
         logger = mock(TransferLogger.class);
-        service = new TransferServiceImpl(validationService, cardStorage, logger);
+        properties = new TransferProperties();
+        // Фиксированный код — как в интеграционных тестах через env:
+        // юнит-тесты подтверждают операции заведомо известным "0000"
+        properties.setConfirmCode("0000");
+        properties.setMaxConfirmAttempts(3);
+        service = new TransferServiceImpl(validationService, cardStorage, logger, properties);
 
         transferRequest = new TransferRequest(
                 "4111111111111111", "12/27", "123",
@@ -68,7 +75,7 @@ class TransferServiceImplTest {
     void confirmOperation_unknownId_throwsOperationNotFound() {
         service.transfer(transferRequest); // создаём операции, но подтверждаем чужой ID
 
-        assertThrows(OperationNotFoundException.class,   // ← было ErrorInputData
+        assertThrows(OperationNotFoundException.class,
                 () -> service.confirmOperation(
                         new ConfirmationRequest("deadbeef-0000-0000-0000-000000000000", "0000")));
     }
@@ -80,7 +87,7 @@ class TransferServiceImplTest {
         assertThrows(InvalidConfirmationCodeException.class,
                 () -> service.confirmOperation(new ConfirmationRequest(opId, "9999")));
 
-        verify(logger).logError(any(), eq("Неверный код подтверждения"));
+        verify(logger).logError(any(), contains("Неверный код подтверждения"));
         // и убедимся, что деньги не списались
         verify(cardStorage, never()).debit(anyString(), anyLong());
     }
@@ -92,6 +99,22 @@ class TransferServiceImplTest {
 
         assertThrows(ErrorInputData.class,
                 () -> service.confirmOperation(new ConfirmationRequest(opId, "0000")));
+    }
+
+    @Test
+    void confirmOperation_tooManyAttempts_operationBlocked() {
+        String opId = service.transfer(transferRequest);
+
+        // Три неверных ввода — разрешённый максимум при maxConfirmAttempts=3
+        for (int i = 0; i < 3; i++) {
+            assertThrows(InvalidConfirmationCodeException.class,
+                    () -> service.confirmOperation(new ConfirmationRequest(opId, "9999")));
+        }
+
+        // Четвёртый — с верным кодом — всё равно блокировка: деньги не списываются
+        assertThrows(ErrorInputData.class,
+                () -> service.confirmOperation(new ConfirmationRequest(opId, "0000")));
+        verify(cardStorage, never()).debit(anyString(), anyLong());
     }
 
     @Test

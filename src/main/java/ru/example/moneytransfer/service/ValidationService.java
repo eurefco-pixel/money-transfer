@@ -1,10 +1,10 @@
 package ru.example.moneytransfer.service;
 
 import org.springframework.stereotype.Component;
+import ru.example.moneytransfer.config.TransferProperties;
 import ru.example.moneytransfer.exception.ErrorInputData;
 import ru.example.moneytransfer.exception.InvalidAmountException;
 import ru.example.moneytransfer.exception.InvalidCardNumberException;
-import ru.example.moneytransfer.exception.InvalidCvvException;
 import ru.example.moneytransfer.exception.InvalidValidTillException;
 import ru.example.moneytransfer.model.Amount;
 import ru.example.moneytransfer.model.TransferRequest;
@@ -12,45 +12,54 @@ import ru.example.moneytransfer.model.TransferRequest;
 import java.time.YearMonth;
 
 /**
- * Проверка входных данных (этап 3): алгоритм Луна, срок действия, CVV, сумма.
- * Любое нарушение формата -> ErrorInputData -> HTTP 400 {message, id}.
- * Проверки существования карты, баланса и валюты — в TransferService (HTTP 500).
+ * Бизнес-валидация. Формат полей (16 цифр, ММ/ГГ, CVV, положительная сумма,
+ * заполненность) проверяется Bean Validation на слое контроллера — см. TransferRequest и Amount.
+ * Здесь остаются правила, которые на аннотации не переносятся:
+ * алгоритм Луна, срок действия карты, поддерживаемые валюты и лимит, «не та же карта».
  */
 @Component
 public class ValidationService {
 
-    /**
-     * Публичная точка входа: вызывает все проверки по порядку.
-     */
+    private final TransferProperties properties;
+
+    public ValidationService(TransferProperties properties) {
+        this.properties = properties;
+    }
+
     public void validate(TransferRequest request) {
         if (request == null) {
             throw new ErrorInputData("Запрос не заполнен");
         }
-        validateCardNumber(request.cardFromNumber(), "Карта отправителя");
-        validateCardNumber(request.cardToNumber(), "Карта получателя");
-        validateValidTill(request.cardFromValidTill());
-        validateCvv(request.cardFromCVV());
-        validateAmount(request.amount());
+        validateNotSameCard(request);
+        validateLuhn(request.cardFromNumber(), "Карта отправителя");
+        validateLuhn(request.cardToNumber(), "Карта получателя");
+        validateValidTillNotExpired(request.cardFromValidTill());
+        validateAmountRules(request.amount());
     }
 
-    void validateCardNumber(String number, String label) {
-        if (isBlank(number)) {
-            throw new InvalidCardNumberException(label + ": номер карты не заполнен");
+
+    private void validateNotSameCard(TransferRequest request) {
+        // Сравниваем нормализованные номера: "4111 1111..." и "41111111..." — одна карта
+        String from = request.cardFromNumber().replace(" ", "");
+        String to = request.cardToNumber().replace(" ", "");
+        if (from.equals(to)) {
+            throw new ErrorInputData("Нельзя переводить на ту же карту");
         }
-        // Пробелы в номере нормализуем: люди копируют номера с пробелами
+    }
+
+    /**
+     * Алгоритм Луна: сумма цифр справа налево, где каждая вторая цифра
+     * удваивается (если результат > 9 — вычитаем 9), должна быть кратна 10.
+     * Формат (16 цифр) гарантирован аннотацией @Pattern, поэтому только нормализация пробелов.
+     */
+    private void validateLuhn(String number, String label) {
         String digits = number.replace(" ", "");
-        if (!digits.matches("\\d{16}")) {
-            throw new InvalidCardNumberException(label + ": номер карты должен состоять из 16 цифр");
-        }
         if (!passesLuhnCheck(digits)) {
             throw new InvalidCardNumberException(label + ": некорректный номер карты");
         }
     }
 
-    void validateValidTill(String validTill) {
-        if (validTill == null || !validTill.matches("(0[1-9]|1[0-2])/\\d{2}")) {
-            throw new InvalidValidTillException("Срок действия должен быть в формате ММ/ГГ");
-        }
+    private void validateValidTillNotExpired(String validTill) {
         YearMonth cardMonth = YearMonth.of(
                 2000 + Integer.parseInt(validTill.substring(3)),
                 Integer.parseInt(validTill.substring(0, 2)));
@@ -59,28 +68,19 @@ public class ValidationService {
         }
     }
 
-    void validateCvv(String cvv) {
-        if (cvv == null || !cvv.matches("\\d{3}")) {
-            throw new InvalidCvvException("CVV должен состоять из 3 цифр");
+    private void validateAmountRules(Amount amount) {
+        String currency = amount.currency().trim().toUpperCase();
+        if (!properties.getAllowedCurrencies().contains(currency)) {
+            throw new InvalidAmountException(
+                    "Валюта не поддерживается: " + amount.currency()
+                            + ". Допустимые: " + properties.getAllowedCurrencies());
+        }
+        if (amount.value() > properties.getMaxAmountValue()) {
+            throw new InvalidAmountException(
+                    "Сумма перевода превышает лимит: " + properties.getMaxAmountValue() + " копеек");
         }
     }
 
-    void validateAmount(Amount amount) {
-        if (amount == null) {
-            throw new InvalidAmountException("Сумма перевода не указана");
-        }
-        if (amount.value() <= 0) {
-            throw new InvalidAmountException("Сумма перевода должна быть больше нуля");
-        }
-        if (isBlank(amount.currency())) {
-            throw new InvalidAmountException("Валюта не указана");
-        }
-    }
-
-    /**
-     * Алгоритм Луна: сумма цифр справа налево, где каждая вторая цифра
-     * удваивается (если результат > 9 — вычитаем 9), должна быть кратна 10.
-     */
     boolean passesLuhnCheck(String digits) {
         int sum = 0;
         for (int i = 0; i < digits.length(); i++) {
@@ -94,9 +94,5 @@ public class ValidationService {
             sum += d;
         }
         return sum % 10 == 0;
-    }
-
-    private boolean isBlank(String s) {
-        return s == null || s.isBlank();
     }
 }

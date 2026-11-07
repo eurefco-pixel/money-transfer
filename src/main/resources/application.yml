@@ -11,6 +11,8 @@ transfer:
   operation-ttl-minutes: 5
   allowed-currencies: [ RUR ]
   max-amount-value: 100000000  # копейки
+  confirm-code: "0000"       # фикс-код для демо/тестов; пусто = случайный на операцию
+  max-confirm-attempts: 3    # максимум неверных вводов кода
 
 cards:
   file: ./data/cards.json
@@ -22,12 +24,3 @@ transfer-log:
 logging:
   level:
     ru.example.moneytransfer: DEBUG
----
-spring:
-  config:
-    activate:
-      on-profile: docker
-cards:
-  file: /app/data/cards.json
-transfer-log:
-  file: /app/data/transfer.log

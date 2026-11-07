@@ -5,9 +5,11 @@ public record Operation(
         String cardFromNumber,
         String cardToNumber,
         long amountValue,      // в копейках
-        long commission,       // в копейках
+        long commission,       // в копейки
         String createdAt,
-        boolean confirmed
+        boolean confirmed,
+        int attempts,          // сделано неверных вводов кода
+        String confirmCode     // код, сгенерированный для этой операции (null, если код задан настройкой)
 ) {
     /*
      Никаких методов, возвращающих Operation.

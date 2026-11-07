@@ -1,4 +1,0 @@
-[
-  { "cardNumber": "1111222233334444", "validTill": "11/28", "cvv": "123", "currency": "RUR", "balance": 50000000 },
-  { "cardNumber": "5555666677778888", "validTill": "08/27", "cvv": "456", "currency": "RUR", "balance": 1000000 }
-]

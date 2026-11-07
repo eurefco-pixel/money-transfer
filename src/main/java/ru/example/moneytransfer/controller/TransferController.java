@@ -1,5 +1,6 @@
 package ru.example.moneytransfer.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,13 +19,13 @@ public class TransferController {
     }
 
     @PostMapping("/transfer")
-    public TransferResponse transfer(@RequestBody TransferRequest request) {
+    public TransferResponse transfer(@Valid @RequestBody TransferRequest request) {
         String operationId = transferService.transfer(request);
         return new TransferResponse(operationId);
     }
 
     @PostMapping("/confirmOperation")
-    public TransferResponse confirmOperation(@RequestBody ConfirmationRequest request) {
+    public TransferResponse confirmOperation(@Valid @RequestBody ConfirmationRequest request) {
         String operationId = transferService.confirmOperation(request);
         return new TransferResponse(operationId);
     }
